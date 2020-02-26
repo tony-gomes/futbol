@@ -2,8 +2,13 @@ require 'CSV'
 require_relative 'game'
 require_relative 'game_team'
 require_relative 'team'
+require_relative 'results_tracker'
+require_relative './modules/calculable'
+require_relative './modules/transformable'
 
-class StatTracker
+class StatTracker < ResultsTracker
+  include Calculable
+  include Transformable
 
   def initialize()
   end
@@ -178,65 +183,6 @@ class StatTracker
     score_differences_by_team_id(team_id).min.abs
   end
 
-  def change_data_to_array(data_class)
-    data_class.all.values
-  end
-
-  def find_games(season, type)
-    Game.all.select do |game_id, game_data|
-      game_data.season == season && game_data.type == type
-    end
-  end
-
-  def find_regular_season_teams(season)
-    teams = []
-    find_games(season, "Regular Season").select do |game_id, game_object|
-        teams << game_object.home_team_id
-        teams << game_object.away_team_id
-    end
-    teams = teams.uniq
-  end
-
-  def find_post_season_teams(season)
-    teams = []
-    find_games(season, "Postseason").select do |game_id, game_object|
-      teams << game_object.home_team_id
-      teams << game_object.away_team_id
-    end
-    teams = teams.uniq
-  end
-
-  def find_eligible_teams(season)
-    eligible_teams = []
-    find_regular_season_teams(season).each do |team_id|
-      eligible_teams << team_id
-    find_post_season_teams(season).each do |team_id|
-      eligible_teams << team_id
-      end
-    end
-    eligible_teams = eligible_teams.uniq
-  end
-
-  def win_percentage_by_season(season, team_id, type)
-      team_games = find_games(season, type).select do |game_id, game_data|
-        game_data.home_team_id == team_id || game_data.away_team_id == team_id
-      end
-      wins = 0
-      team_games.each_value do |game_data|
-        if team_id == game_data.home_team_id
-          wins += 1 if game_data.home_goals > game_data.away_goals
-        elsif team_id == game_data.away_team_id
-          wins += 1 if game_data.away_goals > game_data.home_goals
-        end
-      end
-      if team_games.count > 0
-        percentage = wins.to_f/team_games.count
-        percentage.round(3)
-      elsif team_games.count == 0
-        percentage = 0
-      end
-  end
-
   def post_season_decline(season)
     teams = {}
     find_eligible_teams(season).each do |team_id|
@@ -267,6 +213,9 @@ class StatTracker
     Team.all.count
   end
 
+#There has to be a way to write a helper method to cut down on all these min_by
+#and max_by methods with slight differences
+
   def best_offense
     teams = change_data_to_array(Team)
     best_team = teams.max_by do |team|
@@ -275,7 +224,7 @@ class StatTracker
         total_score = games_with_team.sum do |game|
           game.home_team_id == team.team_id ? game.home_goals : game.away_goals
         end
-        total_score.to_f / games_with_team.count
+        average(total_score, games_with_team)
       end
     end
     best_team.team_name
@@ -289,7 +238,7 @@ class StatTracker
         total_score = games_with_team.sum do |game|
           game.home_team_id == team.team_id ? game.home_goals : game.away_goals
       end
-        total_score.to_f / games_with_team.count
+        average(total_score, games_with_team)
       end
     end
     worst_team.team_name
@@ -303,7 +252,7 @@ class StatTracker
         total_score = games_with_team.sum do |game|
           game.home_team_id == team.team_id ? game.away_goals : game.home_goals
       end
-        total_score.to_f / games_with_team.count
+        average(total_score, games_with_team)
       end
     end
     best_team.team_name
@@ -317,7 +266,7 @@ class StatTracker
         total_score = games_with_team.sum do |game|
           game.home_team_id == team.team_id ? game.away_goals : game.home_goals
       end
-        total_score.to_f / games_with_team.count
+        average(total_score, games_with_team)
       end
     end
     worst_team.team_name
@@ -329,7 +278,7 @@ class StatTracker
     highest_visitor = teams.max_by do |team|
       games_visiting = games.select { |game| game.away_team_id == team.team_id }
       total_score = games_visiting.sum { |game| game.away_goals }
-      total_score.to_f / games_visiting.count
+      average(total_score, games_visiting)
     end
     highest_visitor.team_name
   end
@@ -340,7 +289,7 @@ class StatTracker
     highest_visitor = teams.min_by do |team|
       games_visiting = games.select { |game| game.away_team_id == team.team_id }
       total_score = games_visiting.sum { |game| game.away_goals }
-      total_score.to_f / games_visiting.count
+      average(total_score, games_visiting)
     end
     highest_visitor.team_name
   end
@@ -351,7 +300,7 @@ class StatTracker
     highest_home = teams.max_by do |team|
       games_visiting = games.select { |game| game.home_team_id == team.team_id }
       total_score = games_visiting.sum { |game| game.home_goals }
-      total_score.to_f / games_visiting.count
+      average(total_score, games_visiting)
     end
     highest_home.team_name
   end
@@ -362,7 +311,7 @@ class StatTracker
     lowest_home = teams.min_by do |team|
       games_visiting = games.select { |game| game.home_team_id == team.team_id }
       total_score = games_visiting.sum { |game| game.home_goals }
-      total_score.to_f / games_visiting.count
+      average(total_score, games_visiting)
     end
     lowest_home.team_name
   end
@@ -397,7 +346,6 @@ class StatTracker
         away_win_percentage = win_percentage(away_games, team)
         (home_win_percentage - away_win_percentage).abs
       end
-
     end
     biggest_home_away_diff.team_name
   end
@@ -428,12 +376,6 @@ class StatTracker
     total_score.to_f / games.count
   end
 
-  def games_played_by_team(team)
-    Game.all.values.select do |game|
-      game.home_team_id == team.team_id || game.away_team_id == team.team_id
-    end
-  end
-
   def winningest_coach(season)
     season = season
     games = Game.games_in_a_season(season)
@@ -442,24 +384,6 @@ class StatTracker
       game_results.count("WIN") / game_results.count.to_f
     end
     winner.first
-  end
-
-  def gameteams_matching_games(games)
-    GameTeam.all.select do |game_id, gameteam|
-      games.keys.include?(game_id)
-    end
-  end
-
-  def coaches_with_team_id(games)
-    gamesteams = gameteams_matching_games(games)
-    coaches = {}
-    gamesteams.each_value do |gameteam|
-      gameteam.each_value do |team|
-        coaches[team.head_coach] = [] if !coaches.has_key?(team.head_coach)
-        coaches[team.head_coach] << team.result
-      end
-    end
-    coaches
   end
 
   def worst_coach(season)
@@ -508,19 +432,8 @@ class StatTracker
     Game.all.each_value do |game|
       total_goals_per_game << game.away_goals + game.home_goals.to_f
     end
-    (total_goals_per_game.sum / Game.all.length).round(2)
-  end
-
-  def total_goals_per_games(games)
-    total_goals = games.values.sum { |game| game.total_goals }.to_f
-  end
-
-  def all_seasons
-    all_seasons = []
-    Game.all.each_value do |game|
-      all_seasons << game.season
-    end
-    all_seasons.uniq
+    total_goals_per_game = add(total_goals_per_game)
+    average(total_goals_per_game, Game.all).round(2)
   end
 
   def average_goals_by_season
@@ -531,7 +444,7 @@ class StatTracker
       games = Game.games_in_a_season(season)
       goals = total_goals_per_games(games)
 
-      goals_by_season[season] = (goals / games.length).round(2)
+      goals_by_season[season] = average(goals, games).round(2)
     end
     goals_by_season
   end
