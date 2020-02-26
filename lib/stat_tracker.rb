@@ -150,19 +150,10 @@ class StatTracker
       team_games = Game.find_games(season, type).select do |game_id, game_data|
         game_data.home_team_id == team_id || game_data.away_team_id == team_id
       end
-      wins = 0
-      team_games.each_value do |game_data|
-        if team_id == game_data.home_team_id
-          wins += 1 if game_data.home_goals > game_data.away_goals
-        elsif team_id == game_data.away_team_id
-          wins += 1 if game_data.away_goals > game_data.home_goals
-        end
-      end
-      if team_games.count > 0
-        percentage = wins.to_f/team_games.count
-        percentage.round(3)
-      elsif team_games.count == 0
-        percentage = 0
+      if !team_games.empty?
+        win_percentage(team_games.values, team_id).round(3)
+      else
+        0.0
       end
   end
 
