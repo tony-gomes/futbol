@@ -73,6 +73,15 @@ class Team
     winningest.team_name
   end
 
+  def self.find_season_teams(season = nil, type = nil)
+    teams = []
+    Game.find_games(season, type).select do |game_id, game_object|
+        teams << game_object.home_team_id
+        teams << game_object.away_team_id
+    end
+    teams = teams.uniq
+  end
+
   attr_reader :team_id,
               :franchise_id,
               :team_name,

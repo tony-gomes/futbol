@@ -9,10 +9,6 @@ class Game
     @@games
   end
 
-  def self.games=(value)
-    @@games = value
-  end
-
   def self.number_of_games
     @@games.length
   end
@@ -27,6 +23,12 @@ class Game
   def self.games_in_a_season(season)
     @@games.select do |_game_id, game|
       game.season == season
+    end
+  end
+
+  def self.find_games(season, type)
+    Game.all.select do |game_id, game_data|
+      game_data.season == season && game_data.type == type
     end
   end
 

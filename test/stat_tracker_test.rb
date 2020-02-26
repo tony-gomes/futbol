@@ -14,10 +14,10 @@ class StatTrackerTest < Minitest::Test
   @@stat_tracker = StatTracker.from_csv(@@locations)
 
   def test_it_can_find_games
-    assert_equal 720, @@stat_tracker.find_games("20122013", "Regular Season").count
-    assert_equal 1230, @@stat_tracker.find_games("20142015", "Regular Season").count
-    assert_equal 86, @@stat_tracker.find_games("20122013", "Postseason").count
-    assert_equal 89, @@stat_tracker.find_games("20142015", "Postseason").count
+    assert_equal 720, Game.find_games("20122013", "Regular Season").count
+    assert_equal 1230, Game.find_games("20142015", "Regular Season").count
+    assert_equal 86, Game.find_games("20122013", "Postseason").count
+    assert_equal 89, Game.find_games("20142015", "Postseason").count
   end
 
   def test_from_csv_returns_new_instance
@@ -29,13 +29,13 @@ class StatTrackerTest < Minitest::Test
   end
 
   def test_it_finds_regular_season_teams
-    assert_equal 30, @@stat_tracker.find_regular_season_teams("20142015").count
-    assert_equal true, @@stat_tracker.find_regular_season_teams("20142015").include?(26)
-    assert_equal false, @@stat_tracker.find_regular_season_teams("20142015").include?(59)
+    assert_equal 30, Team.find_season_teams("20142015", "Regular Season").count
+    assert_equal true, Team.find_season_teams("20142015", "Regular Season").include?(26)
+    assert_equal false, Team.find_season_teams("20142015", "Regular Season").include?(59)
   end
 
   def test_it_has_post_season_teams
-    assert_equal 16, @@stat_tracker.find_post_season_teams("20142015").count
+    assert_equal 16, Team.find_season_teams("20142015", "Postseason").count
   end
 
   def test_it_can_find_eligible_teams
@@ -353,7 +353,7 @@ class StatTrackerTest < Minitest::Test
   #
   #   assert_equal "DC United", @@stat_tracker.most_accurate_team(game.season)
   # end
-  # 
+  #
   # def test_least_accurate_team
   #   game = Game.all.values.first
   #

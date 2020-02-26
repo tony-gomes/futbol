@@ -105,7 +105,7 @@ class StatTracker
 
   def winningest_team
     Team.winningest_team
-  end   
+  end
 
   def best_fans
     biggest_home_away_diff = Team.all.values.max_by do |team|
@@ -118,7 +118,6 @@ class StatTracker
         away_win_percentage = win_percentage(away_games, team)
         (home_win_percentage - away_win_percentage).abs
       end
-
     end
     biggest_home_away_diff.team_name
   end
@@ -136,35 +135,11 @@ class StatTracker
     teams_with_better_away.map { |team| team.team_name }
   end
 
-  def find_games(season, type)
-    Game.all.select do |game_id, game_data|
-      game_data.season == season && game_data.type == type
-    end
-  end
-
-  def find_regular_season_teams(season)
-    teams = []
-    find_games(season, "Regular Season").select do |game_id, game_object|
-        teams << game_object.home_team_id
-        teams << game_object.away_team_id
-    end
-    teams = teams.uniq
-  end
-
-  def find_post_season_teams(season)
-    teams = []
-    find_games(season, "Postseason").select do |game_id, game_object|
-      teams << game_object.home_team_id
-      teams << game_object.away_team_id
-    end
-    teams = teams.uniq
-  end
-
   def find_eligible_teams(season)
     eligible_teams = []
-    find_regular_season_teams(season).each do |team_id|
+    Team.find_season_teams(season, "Regular Season").each do |team_id|
       eligible_teams << team_id
-    find_post_season_teams(season).each do |team_id|
+    Team.find_season_teams(season, "Postseason").each do |team_id|
       eligible_teams << team_id
       end
     end
@@ -172,7 +147,7 @@ class StatTracker
   end
 
   def win_percentage_by_season(season, team_id, type)
-      team_games = find_games(season, type).select do |game_id, game_data|
+      team_games = Game.find_games(season, type).select do |game_id, game_data|
         game_data.home_team_id == team_id || game_data.away_team_id == team_id
       end
       wins = 0
