@@ -10,6 +10,37 @@ class GameTeam
     @@game_teams
   end
 
+  def self.season_games(games)
+      @@game_teams.select do |game_id, gameteam|
+        games.keys.include?(game_id)
+      end
+  end
+
+  def self.matching_games(games)
+    @@game_teams.select do |game_id, gameteam|
+      games.keys.include?(game_id)
+    end
+  end
+
+  def self.coaches_with_team_id(games)
+    gamesteams = GameTeam.matching_games(games)
+    coaches = {}
+    gamesteams.each_value do |gameteam|
+      gameteam.each_value do |team|
+        coaches[team.head_coach] = [] if !coaches.has_key?(team.head_coach)
+        coaches[team.head_coach] << team.result
+      end
+    end
+    coaches
+  end
+
+  def self.all_game_teams_by_team_id(team_id)
+    team_id = team_id.to_i if team_id.class != Integer
+    @@game_teams.reduce([]) do |return_games, game|
+      return_games << game.last.fetch(team_id) if game.last.has_key?(team_id)
+      return_games
+    end
+  end
 
   attr_reader :game_id,
               :team_id,
