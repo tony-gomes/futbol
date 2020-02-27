@@ -120,19 +120,19 @@ class StatTrackerTest < Minitest::Test
   end
 
   def test_it_can_get_all_game_teams_by_team_id_in_array
-    assert_instance_of Array, @@stat_tracker.all_game_teams_by_team_id("3")
-    assert_equal 4, @@stat_tracker.all_game_teams_by_team_id("3").length
+    assert_instance_of Array, GameTeam.all_game_teams_by_team_id("3")
+    assert_equal 4, GameTeam.all_game_teams_by_team_id("3").length
 
-    assert_instance_of Array, @@stat_tracker.all_game_teams_by_team_id("10")
-    assert_equal 6, @@stat_tracker.all_game_teams_by_team_id("10").length
+    assert_instance_of Array, GameTeam.all_game_teams_by_team_id("10")
+    assert_equal 6, GameTeam.all_game_teams_by_team_id("10").length
   end
 
   def test_it_can_get_all_games_by_team_id_in_array
-    assert_instance_of Array, @@stat_tracker.all_games_by_team_id("3")
-    assert_equal 4, @@stat_tracker.all_games_by_team_id("3").length
+    assert_instance_of Array, Game.all_games_by_team_id("3")
+    assert_equal 4, Game.all_games_by_team_id("3").length
 
-    assert_instance_of Array, @@stat_tracker.all_games_by_team_id("10")
-    assert_equal 11, @@stat_tracker.all_games_by_team_id("10").length
+    assert_instance_of Array, Game.all_games_by_team_id("10")
+    assert_equal 11, Game.all_games_by_team_id("10").length
   end
 
   def test_it_can_get_total_results_by_team_id
