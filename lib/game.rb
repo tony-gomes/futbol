@@ -77,6 +77,15 @@ class Game
     end
   end
 
+  def self.all_games_by_team_id(team_id)
+    team_id = team_id.to_i if team_id.class != Integer
+    @@games.reduce([]) do |return_games, game|
+      if game.last.away_team_id == team_id || game.last.home_team_id == team_id
+        return_games << game.last
+      end
+      return_games
+    end
+  end
 
   attr_reader :game_id,
               :season,

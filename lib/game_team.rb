@@ -33,7 +33,15 @@ class GameTeam
     end
     coaches
   end
-  
+
+  def self.all_game_teams_by_team_id(team_id)
+    team_id = team_id.to_i if team_id.class != Integer
+    @@game_teams.reduce([]) do |return_games, game|
+      return_games << game.last.fetch(team_id) if game.last.has_key?(team_id)
+      return_games
+    end
+  end
+
   attr_reader :game_id,
               :team_id,
               :hoa,
