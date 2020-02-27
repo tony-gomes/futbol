@@ -45,7 +45,7 @@ class Team
         game.away_team_id == team.team_id
       end
     end
-
+    
       total_score = games.sum do |game|
         field == :home ? game.home_goals : game.away_goals
       end

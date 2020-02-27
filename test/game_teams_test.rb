@@ -52,20 +52,20 @@ class GameTeamTest < Minitest::Test
 
   def test_it_can_add_game_teams
     assert_instance_of Hash, GameTeam.all
-    assert_equal 7441, GameTeam.all.length
+    assert_equal 20, GameTeam.all.length
 
-    assert_instance_of GameTeam, GameTeam.all[2012030221][3]
-    assert_instance_of GameTeam, GameTeam.all[2012030221][6]
+    assert_instance_of GameTeam, GameTeam.all[2012030021][1]
+    assert_instance_of GameTeam, GameTeam.all[2012030021][2]
 
-    assert_equal 3, GameTeam.all[2012030221][3].team_id
-    assert_equal "John Tortorella", GameTeam.all[2012030221][3].head_coach
-    assert_equal 6, GameTeam.all[2012030221][6].team_id
-    assert_equal "Claude Julien", GameTeam.all[2012030221][6].head_coach
+    assert_equal 1, GameTeam.all[2012030021][1].team_id
+    assert_equal "Team1 Coach", GameTeam.all[2012030021][1].head_coach
+    assert_equal 2, GameTeam.all[2012030021][2].team_id
+    assert_equal "Team2 Coach", GameTeam.all[2012030021][2].head_coach
   end
 
   def test_it_can_load_all_game_teams_from_csv
-    assert_equal 2012030221, GameTeam.all.keys.first
-    assert_equal 2016020251, GameTeam.all.keys.last
+    assert_equal 2012030021, GameTeam.all.keys.first
+    assert_equal 2012030135, GameTeam.all.keys.last
   end
 
 end

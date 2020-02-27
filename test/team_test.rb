@@ -33,19 +33,19 @@ class TeamTest < Minitest::Test
 
   def test_it_can_add_team
     assert_instance_of Hash, Team.all
-    assert_equal 32, Team.all.length
-    assert_instance_of Team, Team.all[26]
-    assert_equal 26, Team.all[26].team_id
-    assert_equal 14, Team.all[26].franchise_id
-    assert_equal "FC Cincinnati", Team.all[26].team_name
-    assert_equal "CIN", Team.all[26].abbreviation
-    assert_equal "Nippert Stadium", Team.all[26].stadium
-    assert_equal "/api/v1/teams/26", Team.all[26].link
+    assert_equal 10, Team.all.length
+    assert_instance_of Team, Team.all[10]
+    assert_equal 10, Team.all[10].team_id
+    assert_equal 10, Team.all[10].franchise_id
+    assert_equal "Team10", Team.all[10].team_name
+    assert_equal "TM10", Team.all[10].abbreviation
+    assert_equal "Stadium10", Team.all[10].stadium
+    assert_equal "/api/v1/teams/10", Team.all[10].link
   end
 
   def test_it_loads_all_teams_from_csv
     assert_equal 1, Team.all[1].team_id
-    assert_equal 53, Team.all[53].team_id
+    assert_equal 8, Team.all[8].team_id
   end
 
 end
