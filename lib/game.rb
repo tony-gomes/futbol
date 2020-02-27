@@ -41,9 +41,9 @@ class Game
 
   def self.total_goals_per_game(games = nil)
     if games != nil
-      total_goals = games.values.sum { |game| game.total_goals }.to_f
+      games.values.sum { |game| game.total_goals }.to_f
     else
-      total_goals = Game.all.sum { |_game_id, game| game.total_goals }.to_f
+      Game.all.sum { |_game_id, game| game.total_goals }.to_f
     end
   end
 

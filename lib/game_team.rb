@@ -33,21 +33,7 @@ class GameTeam
     end
     coaches
   end
-
-  def self.game_outcomes(season, rank = nil)
-    coaches = GameTeam.coaches_with_team_id(Game.games_in_a_season(season))
-    if rank == "worst"
-      results = coaches.min_by do |coach, game_results|
-        game_results.count("WIN") / game_results.count.to_f
-      end
-    else
-      results = coaches.max_by do |coach, game_results|
-        game_results.count("WIN") / game_results.count.to_f
-      end
-    end
-    results
-  end
-
+  
   attr_reader :game_id,
               :team_id,
               :hoa,

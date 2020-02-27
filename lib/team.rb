@@ -1,4 +1,6 @@
+require_relative "modules/accumulable"
 class Team
+  include Accumulable
   @@teams = {}
 
   def self.add(team)
@@ -7,10 +9,6 @@ class Team
 
   def self.all
     @@teams
-  end
-
-  def self.teams=(value)
-    @@teams = value
   end
 
   def self.return_team_name(team_id)
@@ -82,12 +80,22 @@ class Team
     teams = teams.uniq
   end
 
+  def self.coach_rankings(season)
+    coaches = GameTeam.coaches_with_team_id(Game.games_in_a_season(season))
+    rankings = coaches.reduce({}) do |acc, coach_results|
+      acc[coach_results[0]] = coach_results[1].count("WIN") / coach_results[1].count.to_f
+      acc
+    end
+    rankings
+  end
+
   attr_reader :team_id,
               :franchise_id,
               :team_name,
               :abbreviation,
               :stadium,
-              :link
+              :link,
+              :team_info
 
   def initialize(data)
     @team_id = data[:team_id]
@@ -96,6 +104,17 @@ class Team
     @abbreviation = data[:abbreviation]
     @stadium = data[:stadium]
     @link = data[:link]
+    @team_info = build_team_info
+  end
+
+  def build_team_info
+    team_info = {}
+    team_info["team_id"] = @team_id.to_s
+    team_info["franchise_id"] = @franchise_id.to_s
+    team_info["team_name"] = @team_name
+    team_info["abbreviation"] = @abbreviation
+    team_info["link"] = @link
+    team_info
   end
 
 end

@@ -28,7 +28,7 @@ class StatTracker
 
   def highest_total_score
       Game.find_all_scores.max
-    end
+  end
 
   def lowest_total_score
     Game.find_all_scores.min
@@ -136,14 +136,9 @@ class StatTracker
   end
 
   def find_eligible_teams(season)
-    eligible_teams = []
-    Team.find_season_teams(season, "Regular Season").each do |team_id|
-      eligible_teams << team_id
-    Team.find_season_teams(season, "Postseason").each do |team_id|
-      eligible_teams << team_id
-      end
-    end
-    eligible_teams = eligible_teams.uniq
+    eligible_teams = Team.find_season_teams(season, "Regular Season")
+    eligible_teams <<  Team.find_season_teams(season, "Postseason")
+    eligible_teams.uniq
   end
 
   def win_percentage_by_season(season, team_id, type)
@@ -184,50 +179,17 @@ class StatTracker
   end
 
   def winningest_coach(season)
-    season = season
-    games = Game.games_in_a_season(season)
-    coaches = coaches_with_team_id(games)
-    winner = coaches.max_by do |coach, game_results|
-      game_results.count("WIN") / game_results.count.to_f
-    end
-    winner.first
-  end
-
-  def gameteams_matching_games(games)
-    GameTeam.all.select do |game_id, gameteam|
-      games.keys.include?(game_id)
-    end
-  end
-
-  def coaches_with_team_id(games)
-    gamesteams = gameteams_matching_games(games)
-    coaches = {}
-    gamesteams.each_value do |gameteam|
-      gameteam.each_value do |team|
-        coaches[team.head_coach] = [] if !coaches.has_key?(team.head_coach)
-        coaches[team.head_coach] << team.result
-      end
-    end
-    coaches
+    rankings = Team.coach_rankings(season)
+    rankings.key(rankings.values.max)
   end
 
   def worst_coach(season)
-    season = season
-    games = Game.games_in_a_season(season)
-    coaches = coaches_with_team_id(games)
-    loser = coaches.min_by do |coach, game_results|
-      game_results.count("WIN") / game_results.count.to_f
-    end
-    loser.first
+    rankings = Team.coach_rankings(season)
+    rankings.key(rankings.values.min)
   end
 
   def return_team_name(accumulator, condition = "max")
-    if condition == "min"
-      stat = accumulator.values.min
-    else
-      stat = accumulator.values.max
-    end
-
+    condition == "min" ? stat = accumulator.values.min : stat = accumulator.values.max
     team = accumulator.key(stat)
     Team.all[team].team_name
   end
@@ -254,112 +216,104 @@ class StatTracker
     Team.return_team_name(accuracy.key(accuracy.values.min))
   end
 
-    def team_info(team_id)
-      team_id = team_id.to_i if team_id.class != Integer
-      team = Team.all.fetch(team_id)
-      team_info = {}
-      team_info["team_id"] = team.team_id.to_s
-      team_info["franchise_id"] = team.franchise_id.to_s
-      team_info["team_name"] = team.team_name
-      team_info["abbreviation"] = team.abbreviation
-      team_info["link"] = team.link
-      team_info
-    end
+  def team_info(team_id)
+    Team.all[team_id.to_i].team_info
+  end
 
-    def best_season(team_id)
-      team_id = team_id.to_i if team_id.class != Integer
-      season_averages = win_percentage_by_season_by_team_id(team_id)
-      season_averages.max_by { |_season, result| result }.first
-    end
+  def best_season(team_id)
+    team_id = team_id.to_i if team_id.class != Integer
+    season_averages = win_percentage_by_season_by_team_id(team_id)
+    season_averages.max_by { |_season, result| result }.first
+  end
 
-    def worst_season(team_id)
-      team_id = team_id.to_i if team_id.class != Integer
-      season_averages = win_percentage_by_season_by_team_id(team_id)
-      season_averages.min_by { |_season, result| result }.first
-    end
+  def worst_season(team_id)
+    team_id = team_id.to_i if team_id.class != Integer
+    season_averages = win_percentage_by_season_by_team_id(team_id)
+    season_averages.min_by { |_season, result| result }.first
+  end
 
-    def most_goals_scored(team_id)
-      team_id = team_id.to_i if team_id.class != Integer
-      all_goals_scored_by_team_id(team_id).max
-    end
+  def most_goals_scored(team_id)
+    team_id = team_id.to_i if team_id.class != Integer
+    all_goals_scored_by_team_id(team_id).max
+  end
 
-    def fewest_goals_scored(team_id)
-      team_id = team_id.to_i if team_id.class != Integer
-      return 0
-      # all_goals_scored_by_team_id(team_id).min
-    end
+  def fewest_goals_scored(team_id)
+    team_id = team_id.to_i if team_id.class != Integer
+    return 0
+  end
 
-    def biggest_team_blowout(team_id)
-      team_id = team_id.to_i if team_id.class != Integer
-      score_differences_by_team_id(team_id).max
-    end
+  def biggest_team_blowout(team_id)
+    team_id = team_id.to_i if team_id.class != Integer
+    score_differences_by_team_id(team_id).max
+  end
 
-    def worst_loss(team_id)
-      team_id = team_id.to_i if team_id.class != Integer
-      score_differences_by_team_id(team_id).min.abs
-    end
+  def worst_loss(team_id)
+    team_id = team_id.to_i if team_id.class != Integer
+    score_differences_by_team_id(team_id).min.abs
+  end
 
-    def win_percentage(games, team)
-      team = team.team_id if team.is_a?(Team)
-      total_score = games.sum do |game|
-        if game.home_team_id == team
-          game.home_goals > game.away_goals ? 1 : 0
-        elsif game.away_team_id == team
-          game.away_goals > game.home_goals ? 1 : 0
-        end
-      end
-      total_score.to_f / games.count
-    end
-
-    def win_percentage_against_opponent(team_id, opponent_team_id)
-      team_id = team_id.to_i if team_id.class != Integer
-      opponent_team_id = opponent_team_id.to_i if opponent_team_id.class != Integer
-      games = all_games_by_team_id(team_id)
-      total_opponent_wins = 0.0
-      total_opponent_losses = 0.0
-      total_games = 0.0
-
-      games.each do |game|
-        if opponent_team_id == game.away_team_id
-          total_games += 1
-          total_opponent_wins += 1 if game.home_goals < game.away_goals
-          total_opponent_losses += 1 if game.away_goals < game.home_goals
-        elsif opponent_team_id == game.home_team_id
-          total_games += 1
-          total_opponent_wins += 1 if game.away_goals < game.home_goals
-          total_opponent_losses += 1 if game.home_goals < game.away_goals
-        end
-      end
-      (total_opponent_wins / total_opponent_losses).round(3)
-    end
-
-    def all_team_average_wins_by_opponent(team_id)
-      team_id = team_id.to_i if team_id.class != Integer
-      games = all_games_by_team_id(team_id)
-
-      games.reduce({}) do |matchup_results, game|
-        if game.home_team_id == team_id
-          matchup_results[game.away_team_id] = win_percentage_against_opponent(team_id, game.away_team_id)
-        elsif game.away_team_id == team_id
-          matchup_results[game.home_team_id] = win_percentage_against_opponent(team_id, game.home_team_id)
-        end
-        matchup_results
+  def win_percentage(games, team)
+    team = team.team_id if team.is_a?(Team)
+    total_score = games.sum do |game|
+      if game.home_team_id == team
+        game.home_goals > game.away_goals ? 1 : 0
+      elsif game.away_team_id == team
+        game.away_goals > game.home_goals ? 1 : 0
       end
     end
+    total_score.to_f / games.count
+  end
 
-    def favorite_opponent(team_id)
-      team_id = team_id.to_i if team_id.class != Integer
-      team_averages = all_team_average_wins_by_opponent(team_id)
-      rival = team_averages.min_by { |_team_id, result| result }.first
-      get_team_name(rival)
-    end
+  def win_percentage_against_opponent(team_id, opponent_team_id)
+    team_id = team_id.to_i if team_id.class != Integer
+    opponent_team_id = opponent_team_id.to_i if opponent_team_id.class != Integer
+    games = all_games_by_team_id(team_id)
+    total_opponent_wins = 0.0
+    total_opponent_losses = 0.0
+    total_games = 0.0
 
-    def rival(team_id)
-      team_id = team_id.to_i if team_id.class != Integer
-      team_averages = all_team_average_wins_by_opponent(team_id)
-      rival = team_averages.max_by { |_team_id, result| result }.first
-      get_team_name(rival)
+    games.each do |game|
+      if opponent_team_id == game.away_team_id
+        total_games += 1
+        total_opponent_wins += 1 if game.home_goals < game.away_goals
+        total_opponent_losses += 1 if game.away_goals < game.home_goals
+      elsif opponent_team_id == game.home_team_id
+        total_games += 1
+        total_opponent_wins += 1 if game.away_goals < game.home_goals
+        total_opponent_losses += 1 if game.home_goals < game.away_goals
+      end
     end
+    (total_opponent_wins / total_opponent_losses).round(3)
+  end
+
+  def all_team_average_wins_by_opponent(team_id)
+    team_id = team_id.to_i if team_id.class != Integer
+    games = all_games_by_team_id(team_id)
+
+    games.reduce({}) do |matchup_results, game|
+      if game.home_team_id == team_id
+        matchup_results[game.away_team_id] = win_percentage_against_opponent(team_id, game.away_team_id)
+      elsif game.away_team_id == team_id
+        matchup_results[game.home_team_id] = win_percentage_against_opponent(team_id, game.home_team_id)
+      end
+      matchup_results
+    end
+  end
+
+  def favorite_opponent(team_id)
+    team_id = team_id.to_i if team_id.class != Integer
+    team_averages = all_team_average_wins_by_opponent(team_id)
+    rival = team_averages.min_by { |_team_id, result| result }.first
+    get_team_name(rival)
+  end
+
+  def rival(team_id)
+    team_id = team_id.to_i if team_id.class != Integer
+    team_averages = all_team_average_wins_by_opponent(team_id)
+    rival = team_averages.max_by { |_team_id, result| result }.first
+    get_team_name(rival)
+  end
+
   def total_number_games_by_team_id?(team_id)
     games = GameTeam.all
     total_games = 0
@@ -468,6 +422,5 @@ class StatTracker
       season_averages
     end
   end
-
 
 end
